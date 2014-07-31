@@ -1,0 +1,5 @@
+"title" = "Fotos";
+
+"format_photos_and_videos" = "%ld Fotos, %ld Videos";
+"format_photos" = "%ld Fotos";
+"format_videos" = "%ld Videos";
