@@ -19,6 +19,8 @@
 @property (nonatomic, assign) NSInteger numberOfPhotos;
 @property (nonatomic, assign) NSInteger numberOfVideos;
 
+@property (nonatomic, assign) BOOL disableScrollToBottom;
+
 @end
 
 @implementation QBAssetsCollectionViewController
@@ -46,10 +48,10 @@
 {
     [super viewWillAppear:animated];
     
-    if (self.isMovingToParentViewController) {
-        // Scroll to bottom --- iOS 7 differences
+    // Scroll to bottom
+    if (self.isMovingToParentViewController && !self.disableScrollToBottom) {
         CGFloat topInset;
-        if ([self respondsToSelector:@selector(setEdgesForExtendedLayout:)]) {
+        if ([self respondsToSelector:@selector(setEdgesForExtendedLayout:)]) { // iOS7 or later
             topInset = ((self.edgesForExtendedLayout && UIRectEdgeTop) && (self.collectionView.contentInset.top == 0)) ? (20.0 + 44.0) : 0.0;
         } else {
             topInset = (self.collectionView.contentInset.top == 0) ? (20.0 + 44.0) : 0.0;
@@ -63,6 +65,20 @@
     if (self.allowsMultipleSelection) {
         self.navigationItem.rightBarButtonItem.enabled = [self validateNumberOfSelections:self.imagePickerController.selectedAssetURLs.count];
     }
+}
+
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    
+    self.disableScrollToBottom = YES;
+}
+
+- (void)viewDidDisappear:(BOOL)animated
+{
+    [super viewDidDisappear:animated];
+    
+    self.disableScrollToBottom = NO;
 }
 
 
@@ -218,30 +234,47 @@
                                                                                              forIndexPath:indexPath];
         
         switch (self.filterType) {
-            case QBImagePickerControllerFilterTypeNone:
-                footerView.textLabel.text = [NSString stringWithFormat:NSLocalizedStringFromTable(@"format_photos_and_videos",
+            case QBImagePickerControllerFilterTypeNone:{
+                NSString *format;
+                if (self.numberOfPhotos == 1) {
+                    if (self.numberOfVideos == 1) {
+                        format = @"format_photo_and_video";
+                    } else {
+                        format = @"format_photo_and_videos";
+                    }
+                } else if (self.numberOfVideos == 1) {
+                    format = @"format_photos_and_video";
+                } else {
+                    format = @"format_photos_and_videos";
+                }
+                footerView.textLabel.text = [NSString stringWithFormat:NSLocalizedStringFromTable(format,
                                                                                                   @"QBImagePickerController",
                                                                                                   nil),
-                                             self.numberOfPhotos,
-                                             self.numberOfVideos
-                                             ];
+                                                                                                  self.numberOfPhotos,
+                                                                                                  self.numberOfVideos
+                                                                                                  ];
                 break;
+            }
                 
-            case QBImagePickerControllerFilterTypePhotos:
-                footerView.textLabel.text = [NSString stringWithFormat:NSLocalizedStringFromTable(@"format_photos",
+            case QBImagePickerControllerFilterTypePhotos:{
+                NSString *format = (self.numberOfPhotos == 1) ? @"format_photo" : @"format_photos";
+                footerView.textLabel.text = [NSString stringWithFormat:NSLocalizedStringFromTable(format,
                                                                                                   @"QBImagePickerController",
                                                                                                   nil),
-                                             self.numberOfPhotos
-                                             ];
+                                                                                                  self.numberOfPhotos
+                                                                                                  ];
                 break;
+            }
                 
-            case QBImagePickerControllerFilterTypeVideos:
-                footerView.textLabel.text = [NSString stringWithFormat:NSLocalizedStringFromTable(@"format_videos",
+            case QBImagePickerControllerFilterTypeVideos:{
+                NSString *format = (self.numberOfVideos == 1) ? @"format_video" : @"format_videos";
+                footerView.textLabel.text = [NSString stringWithFormat:NSLocalizedStringFromTable(format,
                                                                                                   @"QBImagePickerController",
                                                                                                   nil),
-                                             self.numberOfVideos
-                                             ];
+                                                                                                  self.numberOfVideos
+                                                                                                  ];
                 break;
+            }
         }
         
         return footerView;
